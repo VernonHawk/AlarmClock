@@ -16,8 +16,8 @@ namespace AlarmClock.Models
     {
         #region attributes
         private static readonly Regex Regex = new Regex("[^0-9.-]+");
-        private const byte MaxMinutes = (byte) (TimeSpan.TicksPerMinute / TimeSpan.TicksPerSecond) - 1;
-        private const byte MaxHours = (byte) (TimeSpan.TicksPerDay / TimeSpan.TicksPerHour) - 1;
+        private const byte MaxMinutes = (byte)(TimeSpan.TicksPerMinute / TimeSpan.TicksPerSecond) - 1;
+        private const byte MaxHours = (byte)(TimeSpan.TicksPerDay / TimeSpan.TicksPerHour) - 1;
 
         private readonly ObservableCollection<AlarmItem> _owner;
         private readonly ClockRepository _clocks;
@@ -31,7 +31,7 @@ namespace AlarmClock.Models
         private ICommand _clickDownMinute;
         private ICommand _addAlarm;
         private ICommand _deleteAlarm;
-        private ICommand _bellAlarm;
+        private ICommand _ringAlarm;
 
         private bool _isActive;
         private bool _isVisible = true;
@@ -77,7 +77,7 @@ namespace AlarmClock.Models
         public bool IsAddEnabled => IsBaseAlarm;
         public bool IsSaveEnabled => !IsBaseAlarm;
         public bool IsCancelEnabled => !IsBaseAlarm;
-        public bool IsBellEnabled => !IsBaseAlarm;
+        public bool IsRingEnabled => !IsBaseAlarm;
         public bool IsDeleteEnabled => !IsBaseAlarm;
 
         public bool IsAllowedTime =>
@@ -112,7 +112,16 @@ namespace AlarmClock.Models
             }
         }
 
-        public bool IsStopped => _isStopped;
+        public bool IsStopped
+        {
+            get => _isStopped;
+            set
+            {
+                _isStopped = value;
+
+                IsActive = !IsActive;
+            }
+        }
         public bool IsEnabled => IsBaseAlarm || !IsActive;
 
         public Clock Clock => _clock;
@@ -147,7 +156,7 @@ namespace AlarmClock.Models
 
         public ICommand DeleteAlarm => _deleteAlarm ?? (_deleteAlarm = new RelayCommand(DeleteAlarmExecute));
 
-        public ICommand BellAlarm => _bellAlarm ?? (_bellAlarm = new RelayCommand(
+        public ICommand RingAlarm => _ringAlarm ?? (_ringAlarm = new RelayCommand(
             delegate
             {
                 if (IsActive)
@@ -164,8 +173,8 @@ namespace AlarmClock.Models
             _minute = minute;
         }
 
-        private int GetTimeValue(AlarmItem ai) => ai._hour * MaxMinutes + ai._minute;
-        private int GetTimeValue(DateTime dt) => dt.Hour * MaxMinutes + dt.Minute;
+        private int GetTimeValue(AlarmItem ai) => ai._hour * (MaxMinutes + 1) + ai._minute;
+        private int GetTimeValue(DateTime dt) => dt.Hour * (MaxMinutes + 1) + dt.Minute;
         public bool Equals(DateTime dt) => GetTimeValue(dt) == GetTimeValue(this);
 
         private void DeleteAlarmExecute(object obj)
@@ -220,12 +229,16 @@ namespace AlarmClock.Models
         {
             try
             {
-                _owner.Add(new AlarmItem(_owner, _clocks, _hour, _minute)
+                var alarm = new AlarmItem(_owner, _clocks, _hour, _minute)
                 {
                     _clock = _clocks.Add(new Clock(StationManager.CurrentUser))
-                });
+                };
+                var index = _owner
+                    .ToList()
+                    .FindIndex(item => GetTimeValue(item) > GetTimeValue(alarm));
 
-                Rearrange();
+                _owner.Insert(index == -1 ? _owner.Count() : index, alarm);
+                //Rearrange();
 
                 OnPropertyChanged(nameof(IsAllowedTime));
             }
@@ -235,7 +248,7 @@ namespace AlarmClock.Models
             }
         }
 
-        public void Rearrange()
+        public void Rearrange()//delete
         {
             var sortedList = UserAlarms.OrderBy(GetTimeValue).ToList();
 

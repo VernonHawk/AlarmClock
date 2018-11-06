@@ -56,7 +56,7 @@ namespace AlarmClock.ViewModels
         #region command functions
         private void SignOutExecute(object obj)
         {
-            BaseAlarm.Rearrange();
+//            BaseAlarm.Rearrange();
 
             StationManager.CurrentUser = null;
 
@@ -95,7 +95,7 @@ namespace AlarmClock.ViewModels
         {
             var timer = new DispatcherTimer()
             {
-                Interval = TimeSpan.FromMilliseconds(200)
+                Interval = TimeSpan.FromSeconds(1)
             };
 
             timer.Tick += delegate

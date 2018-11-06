@@ -8,6 +8,13 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <SolidColorBrush x:Key="BackgroundBrush" Color="White"/>
+        <Storyboard x:Key="Blinking" RepeatBehavior="0:0:10">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" AutoReverse="True"
+                To="0.1"
+                Duration="0:0:0.5"
+                Completed="StoryboardCompleted"/>
+        </Storyboard>
+
         <Style x:Key="ImageEnabled" TargetType="Image">
             <Style.Triggers>
                 <Trigger Property="IsEnabled" Value="False">
@@ -15,12 +22,7 @@
                 </Trigger>
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
                     <DataTrigger.EnterActions>
-                        <BeginStoryboard x:Name="blinking">
-                            <Storyboard RepeatBehavior="0:2:00">
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" AutoReverse="True"
-                                         To="0.1" Duration="0:0:0.5">
-                                </DoubleAnimation>
-                            </Storyboard>
+                        <BeginStoryboard x:Name="blinking" Storyboard="{StaticResource Blinking}">
                         </BeginStoryboard>
                     </DataTrigger.EnterActions>
                     <DataTrigger.ExitActions>
@@ -72,8 +74,8 @@
                         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
                             Visibility="{Binding IsSaveEnabled, Converter={StaticResource BoolToVisibility}}"/>
                         <Button Style="{StaticResource ToolButton}" HorizontalAlignment="Center" 
-                            ToolTip="Bell alarm clock" Command="{Binding BellAlarm}"
-                            Visibility="{Binding IsBellEnabled, Converter={StaticResource BoolToVisibility}}"
+                            ToolTip="Ring alarm clock" Command="{Binding RingAlarm}"
+                            Visibility="{Binding IsRingEnabled, Converter={StaticResource BoolToVisibility}}"
                             IsEnabled="{Binding IsAllowedTime}">
                             <Image Source="/AlarmClock;component/resources/btns/bell.png" Height="24" Style="{StaticResource ImageEnabled}"/>
                         </Button>

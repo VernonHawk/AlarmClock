@@ -1,7 +1,8 @@
 ﻿using AlarmClock.ViewModels;
-
+using System;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Linq;
 
 namespace AlarmClock.Views
 {
@@ -28,5 +29,14 @@ namespace AlarmClock.Views
 
             e.Handled = true;
         }
+
+        private void StoryboardCompleted(object sender, EventArgs e)
+        {
+            var alarm = ((MainViewModel)DataContext).AlarmClocks.SingleOrDefault(item => item.IsActive);
+            if (alarm != null)
+                alarm.IsStopped = true;
+        }
     }
 }
+
+
