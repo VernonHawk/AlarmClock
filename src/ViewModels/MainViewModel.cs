@@ -11,10 +11,12 @@ using AlarmClock.Repositories;
 
 namespace AlarmClock.ViewModels
 {
-    class MainViewModel : NotifyPropertyChanged
+    internal class MainViewModel : NotifyPropertyChanged
     {
         #region attributes
         private string _currentTime;
+        private readonly DispatcherTimer _setTimer;
+        private readonly DispatcherTimer _checkAlarm;
 
         private ICommand _signOut;
         #endregion
@@ -42,23 +44,15 @@ namespace AlarmClock.ViewModels
 
         private AlarmItem BaseAlarm => AlarmClocks.Single(item => item.IsBaseAlarm);
 
-        public void Changed()
-        {
-            foreach (var ai in AlarmClocks.Where(item => item != BaseAlarm))
-                ai.IsVisible = ai.Clock.Owner == (StationManager.CurrentUser ?? ai.Clock.Owner);
-
-            BaseAlarm.Update();
-        }
         #endregion
 
         #region command functions
         private void SignOutExecute(object obj)
         {
-            BaseAlarm.Rearrange();
+            _setTimer.Stop();
+            _checkAlarm.Stop();
 
-            Logger.Log($"User {CurrentUser.Login} was successfully signed out.");
-
-            StationManager.CurrentUser = null;
+            StationManager.SignOut();
 
             NavigationManager.Navigate(Page.SignIn);
         }
@@ -70,10 +64,12 @@ namespace AlarmClock.ViewModels
 
             AlarmClocks.Add(new AlarmItem(AlarmClocks, Clocks, now.Hour, now.Minute));
 
-            Changed();
+            Clocks
+                .ForUser(CurrentUser.Id)
+                .ForEach(clock => AlarmClocks[0].AddAlarm.Execute(clock));
 
-            SetTimer().Start();
-            CheckAlarm().Start();
+            (_setTimer = SetTimer()).Start();
+            (_checkAlarm = CheckAlarm()).Start();
 
             // TODO: Actually load clocks for the User
             Logger.Log($"Loaded Alarm clocks for User {CurrentUser.Login}.");
@@ -98,7 +94,7 @@ namespace AlarmClock.ViewModels
         {
             var timer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(200)
+                Interval = TimeSpan.FromSeconds(1)
             };
 
             timer.Tick += delegate
@@ -116,6 +112,7 @@ namespace AlarmClock.ViewModels
 
                     ai.IsActive = true;
                     ai.Clock.LastTriggered = DateTime.Now;
+                    ai.Clock.NextTrigger = ai.Clock.LastTriggered.AddDays(1);
                     break;
                 }
             };

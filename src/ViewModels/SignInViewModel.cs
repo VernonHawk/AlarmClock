@@ -10,7 +10,7 @@ using AlarmClock.Repositories;
 
 namespace AlarmClock.ViewModels
 {
-    class SignInViewModel : NotifyPropertyChanged
+    internal class SignInViewModel : NotifyPropertyChanged
     {
         private string _emailOrLogin;
         private string _password;
@@ -80,16 +80,15 @@ namespace AlarmClock.ViewModels
                 return;
             }
 
-            userRepo.UpdateLastVisited(user);
+            userRepo.Update(user.UpdateLastVisit());
+            Logger.Log($"User {user.Login} last visit time was successfully updated.");
 
-            StationManager.CurrentUser = user;
-
-            Logger.Log($"User {user.Login} was successfully signed in.");
+            StationManager.Authorize(user);
 
             NavigationManager.Navigate(Page.Main);
         }
 
-        private bool SignInCanExecute(object obj) 
-            => !(string.IsNullOrWhiteSpace(EmailOrLogin) || string.IsNullOrWhiteSpace(Password));
+        private bool SignInCanExecute(object obj) =>
+            !(string.IsNullOrWhiteSpace(EmailOrLogin) || string.IsNullOrWhiteSpace(Password));
     }
 }
